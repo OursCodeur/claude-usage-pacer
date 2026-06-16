@@ -1,0 +1,12 @@
+/* A small downward triangle sitting just above the usage bar, centered on the
+   elapsed point. currentColor lets it read in both light and dark themes. */
+.cup-marker {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 3px;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  opacity: 0.55;
+}
