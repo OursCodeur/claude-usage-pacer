@@ -29,22 +29,8 @@ const MERIDIEM = (() => {
   return { am: norm(word(1)?.value || ''), pm: norm(word(13)?.value || '') };
 })();
 
-// Pull "<weekday> <h>:<mm> [am/pm]" out of a row's text, in any language.
-function parseReset(text) {
-  const t = norm(text);
-  const time = t.match(/(\d{1,2})[:.](\d{2})/); // ":" or "." separator (e.g. Indonesian)
-  const dayWord = t.split(/\s+/).map(slug).find((w) => w in WEEKDAYS);
-  if (!time || dayWord === undefined) return null;
-
-  let hour = Number(time[1]);
-  const pm = MERIDIEM.pm && t.includes(MERIDIEM.pm);
-  if (pm || (MERIDIEM.am && t.includes(MERIDIEM.am))) hour %= 12; // 12-hour clock
-  if (pm) hour += 12;
-  return { day: WEEKDAYS[dayWord], hour, minute: Number(time[2]) };
-}
-
-// Fraction (0 to 1) of the current reset window that has already passed.
-function weekElapsed({ day, hour, minute }) {
+// Fraction (0 to 1) of the weekly window already elapsed, from a "<weekday> <time>" reset.
+function weekElapsed(day, hour, minute) {
   const now = new Date();
   const reset = new Date(now);
   reset.setHours(hour, minute, 0, 0);
@@ -53,12 +39,45 @@ function weekElapsed({ day, hour, minute }) {
   return (now - reset) / WEEK_MS;
 }
 
-// The reset for a bar, but only when it comes from the bar's own row. The
-// single-progressbar check keeps us from reading a neighbouring row's time.
+// Read a row's reset label into the fraction of the week elapsed. Claude shows
+// the weekly reset as a weekday and time, then as a "Resets in X hr Y min"
+// countdown in the final day. `relative` flags that countdown, which the session
+// bar also uses, so weeklyReset can keep the session out.
+function parseReset(text) {
+  const t = norm(text);
+  const time = t.match(/(\d{1,2})[:.](\d{2})/); // ":" or "." separator (e.g. Indonesian)
+  const dayWord = t.split(/\s+/).map(slug).find((w) => w in WEEKDAYS);
+
+  if (time && dayWord !== undefined) {
+    let hour = Number(time[1]);
+    const pm = MERIDIEM.pm && t.includes(MERIDIEM.pm);
+    if (pm || (MERIDIEM.am && t.includes(MERIDIEM.am))) hour %= 12; // 12-hour clock
+    if (pm) hour += 12;
+    return { elapsed: weekElapsed(WEEKDAYS[dayWord], hour, Number(time[2])), relative: false };
+  }
+
+  if (!time) {
+    // Countdown: the numbers are hours and minutes, or just minutes under an hour.
+    const nums = t.replace(/\d+\s*%/g, ' ').match(/\d+/g);
+    if (nums) {
+      const minutes = nums.length > 1 ? Number(nums[0]) * 60 + Number(nums[1]) : Number(nums[0]);
+      return { elapsed: 1 - (minutes * 60 * 1000) / WEEK_MS, relative: true };
+    }
+  }
+  return null;
+}
+
+// The reset for a bar, taken only from the bar's own row (the single-progressbar
+// check rejects a neighbour's). A countdown also describes the session bar, so
+// for those we require the bar to sit with other weekly bars; the session sits
+// alone in its section.
 function weeklyReset(bar) {
   for (let el = bar.parentElement; el; el = el.parentElement) {
     const reset = parseReset(el.textContent);
-    if (reset) return el.querySelectorAll('[role="progressbar"]').length === 1 ? reset : null;
+    if (!reset) continue;
+    if (el.querySelectorAll('[role="progressbar"]').length !== 1) return null;
+    const grouped = (bar.closest('section')?.querySelectorAll('[role="progressbar"][aria-label="Usage"]').length ?? 0) > 1;
+    return reset.relative && !grouped ? null : reset;
   }
   return null;
 }
@@ -69,7 +88,7 @@ function addMarker(bar) {
   const reset = weeklyReset(bar);
   if (!reset) return;
 
-  const pct = weekElapsed(reset) * 100;
+  const pct = reset.elapsed * 100;
   const marker = document.createElement('div');
   marker.className = 'cup-marker';
   marker.style.left = `${pct}%`;
