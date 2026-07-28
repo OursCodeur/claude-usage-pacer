@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Claude Usage Pacer",
-  "version": "1.0.1",
-  "description": "Marks how much of the week has elapsed on Claude's weekly usage bar, so you can pace usage and avoid running out before it resets.",
+  "version": "1.0.2",
+  "description": "Marks elapsed weekly time on each of Claude's usage bars, so you can pace usage before the limits reset.",
   "homepage_url": "https://github.com/OursCodeur/claude-usage-pacer",
   "icons": {
     "16": "icon-16.png",

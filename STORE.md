@@ -14,13 +14,13 @@ There's no build step. The package is a zip of the runtime files:
 
 Name: Claude Usage Pacer
 
-Summary (132 characters or fewer): Marks how much of the week has elapsed on Claude's weekly usage bar, so you can pace usage and avoid running out before it resets.
+Summary (132 characters or fewer): Marks how much of the week has elapsed on Claude's weekly usage bars, so you can pace usage before each limit resets.
 
 Description:
 
-Claude's weekly usage limit resets on a fixed day and time. This extension reads that reset from the settings page and draws a small marker on the "All models" bar showing how much of the week has gone by. If the marker sits ahead of the filled bar you have room to spare; if it's behind, you're spending faster than the clock.
+Claude's weekly usage limits reset on a fixed day and time. This extension reads each reset from the settings page and marks elapsed time on every weekly bar, including the bars for All models and Fable. If a marker sits ahead of the filled bar you have room to spare; if it's behind, you're spending faster than the clock.
 
-It runs only on claude.ai, asks for no other permissions, makes no network requests, and stores nothing. It reads the reset time already shown on the page and draws one element.
+It runs only on claude.ai, asks for no other permissions, makes no network requests, and stores nothing. It reads the reset times already shown on the page and draws one element per weekly bar.
 
 Category: Productivity. Language: English.
 
@@ -28,15 +28,15 @@ Category: Productivity. Language: English.
 
 Data collected: none. In the Chrome dashboard, certify that no user data is collected.
 
-The only access it asks for is running on claude.ai, which it needs to find and annotate the usage bar. Single purpose: show how much of the week has elapsed on Claude's weekly usage limit.
+The only access it asks for is running on claude.ai, which it needs to find and annotate the weekly usage bars. Single purpose: show how much of the week has elapsed on Claude's weekly usage limits.
 
 ## Chrome Web Store
 
 1. Upload the zip as a new item.
-2. Add at least one screenshot (1280x800 or 640x400). The usage panel with the marker on it works well.
+2. Add at least one screenshot (1280x800 or 640x400). The usage panel with its markers works well.
 3. Privacy tab:
-   - Single purpose: show how much of the week has elapsed on Claude's weekly usage limit bar.
-   - Host permission: the content script on claude.ai is needed to find and annotate that bar.
+   - Single purpose: show how much of the week has elapsed on Claude's weekly usage limit bars.
+   - Host permission: the content script on claude.ai is needed to find and annotate those bars.
    - Remote code: no. Every script ships inside the package.
    - Data usage: nothing is collected; certify all three disclosures.
    - Privacy policy: https://github.com/OursCodeur/claude-usage-pacer/blob/main/PRIVACY.md

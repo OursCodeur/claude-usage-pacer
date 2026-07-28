@@ -1,8 +1,6 @@
-// Mark how much of the week has passed on Claude's weekly usage bar. We find the
-// bar by its progressbar role rather than by class names (which change often),
-// then read the reset day and time from the bar's own row. The weekday and the
-// AM/PM words are matched in the page's language via Intl, so this works
-// whatever language Claude is set to.
+// Mark elapsed weekly time on Claude's usage meters. Semantic roles avoid
+// Claude's generated class names, and each meter's row supplies its reset time.
+// Intl supplies weekday and AM/PM names in the page locale.
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const LOCALE = document.documentElement.lang || 'en';
@@ -10,6 +8,10 @@ const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,
 // A normalized word with surrounding punctuation removed ("Dim." -> "dim"),
 // keeping combining marks so Indic vowel signs stay attached to their letter.
 const slug = (s) => norm(s).replace(/^[^\p{L}\p{M}]+|[^\p{L}\p{M}]+$/gu, '');
+const USAGE_METER_SELECTOR = [
+  '[role="progressbar"][aria-label="Usage"]',
+  '[role="meter"]',
+].join(', ');
 
 // Localized weekday name -> day index (0 = Sunday), for the page's language.
 const WEEKDAYS = (() => {
@@ -67,25 +69,25 @@ function parseReset(text) {
   return null;
 }
 
-// The reset for a bar, taken only from the bar's own row (the single-progressbar
-// check rejects a neighbour's). A countdown also describes the session bar, so
-// for those we require the bar to sit with other weekly bars; the session sits
-// alone in its section.
-function weeklyReset(bar) {
-  for (let el = bar.parentElement; el; el = el.parentElement) {
+// A reset must come from the meter's own row. During the final-day countdown,
+// session and weekly rows both use relative text. The session meter comes first;
+// plans with several weekly limits also group those meters in one section.
+function weeklyReset(meter) {
+  for (let el = meter.parentElement; el; el = el.parentElement) {
     const reset = parseReset(el.textContent);
     if (!reset) continue;
-    if (el.querySelectorAll('[role="progressbar"]').length !== 1) return null;
-    const grouped = (bar.closest('section')?.querySelectorAll('[role="progressbar"][aria-label="Usage"]').length ?? 0) > 1;
-    return reset.relative && !grouped ? null : reset;
+    if (el.querySelectorAll(USAGE_METER_SELECTOR).length !== 1) return null;
+    const grouped = (meter.closest('section')?.querySelectorAll(USAGE_METER_SELECTOR).length ?? 0) > 1;
+    const followsSession = meter !== document.querySelector(USAGE_METER_SELECTOR);
+    return reset.relative && !grouped && !followsSession ? null : reset;
   }
   return null;
 }
 
-function addMarker(bar) {
-  const track = bar.parentElement;
+function addMarker(meter) {
+  const track = meter.parentElement;
   if (track.querySelector('.cup-marker')) return;
-  const reset = weeklyReset(bar);
+  const reset = weeklyReset(meter);
   if (!reset) return;
 
   const pct = reset.elapsed * 100;
@@ -98,7 +100,7 @@ function addMarker(bar) {
 }
 
 function decorate() {
-  document.querySelectorAll('[role="progressbar"][aria-label="Usage"]').forEach(addMarker);
+  document.querySelectorAll(USAGE_METER_SELECTOR).forEach(addMarker);
 }
 
 // The usage panel mounts on demand and re-renders, so watch for it and redraw.

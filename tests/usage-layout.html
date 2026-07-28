@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Claude Usage Pacer DOM fixture</title>
+    <script>
+      window.fixtureErrors = [];
+      window.addEventListener('error', (event) => window.fixtureErrors.push(event.message));
+    </script>
+  </head>
+  <body>
+    <section id="session">
+      <div class="usage-row">
+        <span>Current session</span>
+        <span>Resets in 4 hr 20 min</span>
+        <div data-cds="Meter">
+          <div role="meter" aria-valuemin="0" aria-valuemax="100"
+               aria-valuenow="10">10% used</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="weekly">
+      <h3>Weekly limits</h3>
+      <div id="all-models-row" class="usage-row">
+        <span id="all-models-label">All models</span>
+        <span>Resets in 4 hr 20 min</span>
+        <div data-cds="Meter">
+          <div role="meter" aria-labelledby="all-models-label"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="40">40% used</div>
+        </div>
+      </div>
+      <div id="fable-row" class="usage-row">
+        <span id="fable-label">Fable</span>
+        <span>Resets in 4 hr 20 min</span>
+        <div data-cds="Meter">
+          <div role="meter" aria-labelledby="fable-label"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">50% used</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="legacy">
+      <div class="usage-row">
+        <span>All models</span>
+        <span>Resets Sun 6:00 AM</span>
+        <div class="meter-track">
+          <div role="progressbar" aria-label="Usage"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="30">30% used</div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      const fixturePlan = new URLSearchParams(location.search).get('plan') || 'max';
+      if (fixturePlan === 'non-max') document.querySelector('#fable-row').remove();
+    </script>
+    <script src="../content.js"></script>
+    <script>
+      const allModelsMarkers = document.querySelectorAll('#all-models-row .cup-marker').length;
+      const fableMarkers = document.querySelectorAll('#fable-row .cup-marker').length;
+      const sessionMarkers = document.querySelectorAll('#session .cup-marker').length;
+      const legacyMarkers = document.querySelectorAll('#legacy .cup-marker').length;
+      const expectedFableMarkers = fixturePlan === 'max' ? 1 : 0;
+      const passed = window.fixtureErrors.length === 0 && allModelsMarkers === 1
+        && fableMarkers === expectedFableMarkers && sessionMarkers === 0
+        && legacyMarkers === 1;
+      document.body.dataset.testResult = passed ? 'pass' : 'fail';
+      document.body.dataset.scriptErrors = window.fixtureErrors.length;
+      document.body.dataset.allModelsMarkers = allModelsMarkers;
+      document.body.dataset.fableMarkers = fableMarkers;
+      document.body.dataset.sessionMarkers = sessionMarkers;
+      document.body.dataset.legacyMarkers = legacyMarkers;
+    </script>
+  </body>
+</html>
